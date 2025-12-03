@@ -7,6 +7,7 @@ import { getDirections } from '../services/directions';
 import { checkMatch } from '../services/matching';
 import MapComponent from '../components/MapComponent';
 import { Ionicons } from '@expo/vector-icons';
+import { authService } from '../services/auth/authService';
 
 const { height } = Dimensions.get('window');
 
@@ -20,6 +21,7 @@ const HomeScreen = ({ navigation }) => {
     const [myTripId, setMyTripId] = useState(null);
     const [matches, setMatches] = useState([]);
     const [loading, setLoading] = useState(false);
+    const [userName, setUserName] = useState('');
 
     useEffect(() => {
         (async () => {
@@ -35,6 +37,16 @@ const HomeScreen = ({ navigation }) => {
                 longitude: location.coords.longitude
             });
             setOriginText("Current Location");
+            
+            // Get current user name
+            try {
+                const currentUser = await authService.getCurrentUser();
+                if (currentUser) {
+                    setUserName(currentUser.name || 'User');
+                }
+            } catch (error) {
+                console.log('Error getting user name:', error);
+            }
         })();
     }, []);
 
@@ -90,14 +102,14 @@ const HomeScreen = ({ navigation }) => {
                 if (directions) {
                     setRoute(directions);
                 } else {
-                    Alert.alert("Error", "Could not find route");
+                    Alert.alert("Error", "Could not find route. Please check your API key and internet connection.");
                 }
             } else {
-                Alert.alert("Error", "Could not geocode locations");
+                Alert.alert("Error", "Could not geocode locations. Please check your addresses.");
             }
         } catch (e) {
             console.error(e);
-            Alert.alert("Error", e.message);
+            Alert.alert("Error", `Failed to get route: ${e.message}`);
         } finally {
             setLoading(false);
         }
@@ -129,8 +141,30 @@ const HomeScreen = ({ navigation }) => {
         }
     };
 
+    const handleLogout = async () => {
+        try {
+            await authService.logout();
+            navigation.reset({
+                index: 0,
+                routes: [{ name: 'Auth' }],
+            });
+        } catch (error) {
+            Alert.alert('Error', 'Failed to logout');
+        }
+    };
+
     return (
         <View style={styles.container}>
+            <View style={styles.header}>
+                <Text style={styles.headerTitle}>RideShare Lite</Text>
+                <View style={styles.headerRight}>
+                    <Text style={styles.welcomeText}>Hi, {userName}</Text>
+                    <TouchableOpacity onPress={handleLogout} style={styles.logoutButton}>
+                        <Ionicons name="log-out-outline" size={24} color="#000" />
+                    </TouchableOpacity>
+                </View>
+            </View>
+            
             <MapComponent
                 origin={originCoords}
                 destination={destCoords}
@@ -261,6 +295,34 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: '#fff',
+    },
+    header: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        paddingHorizontal: 20,
+        paddingTop: 50,
+        paddingBottom: 20,
+        backgroundColor: '#fff',
+        borderBottomWidth: 1,
+        borderBottomColor: '#f0f0f0',
+    },
+    headerTitle: {
+        fontSize: 20,
+        fontWeight: 'bold',
+        color: '#000',
+    },
+    headerRight: {
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    welcomeText: {
+        fontSize: 16,
+        color: '#666',
+        marginRight: 15,
+    },
+    logoutButton: {
+        padding: 5,
     },
     bottomSheetWrapper: {
         position: 'absolute',

@@ -1,62 +1,81 @@
 # RideShare Lite
 
-RideShare Lite is a lightweight React Native MVP that finds daily carpool matches using route polyline overlap and time-window matching.
+A React Native MVP for daily carpool matching based on route overlap and time windows.
 
 ## Features
-- **Route Search**: Uses Google Directions API to calculate routes.
-- **Real-time Matching**: Matches riders and drivers based on route overlap (>60%) and time window (15 mins).
-- **Map Visualization**: Displays routes and matches on a map.
-- **Chat**: Real-time chat between matched users.
 
-## Setup Instructions
+- **Route Search**: Uses OpenRouteService API to calculate routes.
+- **Real-time Matching**: Matches users if route overlap >60% and trip times within 15 minutes.
+- **Map Visualization**: Displays calculated routes and matches.
+- **Chat**: Real-time messaging between matched users via Firebase.
+- **User Authentication**: JWT-based login/signup system.
 
-1. **Install Dependencies**
-   ```bash
+## Setup
+
+1. Install dependencies:
+   ```
    npm install
    ```
 
-2. **Configure Environment**
-   - Open `src/services/firebase.js` and replace the `firebaseConfig` object with your Firebase project credentials.
-   - Open `src/services/directions.js` and replace `YOUR_GOOGLE_MAPS_API_KEY` with your valid Google Maps API key (ensure Directions API is enabled).
+2. Configure Firebase:
+   - Replace `firebaseConfig` in `src/services/firebase.js` with your Firebase project credentials.
 
-3. **Run Locally**
-   ```bash
-   npx expo start
+3. Configure OpenRouteService API:
+   - Sign up at [OpenRouteService](https://openrouteservice.org/) to get an API key
+   - Replace `YOUR_OPENROUTESERVICE_API_KEY` in `src/services/directions.js` with your API key
+
+4. Run the app:
    ```
-   - Scan the QR code with Expo Go (Android/iOS) or run on a simulator.
+   npm start
+   ```
 
-## Configuration
+## Authentication System
 
-You can tune the matching logic in `src/services/matching.js`:
+This project now includes a JWT-based authentication system with login and signup functionality.
 
-- `MATCH_THRESHOLD_KM`: Distance tolerance for route point matching (default: 1.0 km).
-- `TIME_WINDOW_MINUTES`: Max time difference between trips (default: 15 mins).
-- `OVERLAP_THRESHOLD`: Minimum percentage of route overlap required (default: 0.6 or 60%).
+### How it works
 
-## Test Plan
+1. Users can sign up with email, password, and name
+2. User credentials are stored in Firebase Firestore
+3. Upon successful authentication, a JWT-like token is generated and stored securely using react-native-keychain
+4. The token is used to authenticate subsequent requests
+5. Users can log out to clear their session
 
-1. **Create a Trip**
-   - Open the app.
-   - Select "Rider" or "Driver".
-   - Enter Origin (or use "Current Location") and Destination.
-   - Click "Preview Route" to see the path.
-   - Click "Post Trip".
+### Screens
 
-2. **Verify Matching**
-   - Open the app on a second device (or simulator).
-   - Create a trip with the OPPOSITE role (e.g., Driver if first was Rider).
-   - Use a similar route (e.g., same start/end or a subset).
-   - Ensure the time is within 15 minutes.
-   - A match should appear in the "Matches Found" list.
+- **LoginScreen**: Allows existing users to log in with their credentials
+- **SignupScreen**: Allows new users to create an account
+- **HomeScreen**: Main app screen with logout functionality
 
-3. **Chat**
-   - Click "Chat" on the match item.
-   - Send a message.
-   - Verify the message appears on the other device.
+### Services
 
-## Tech Stack
-- React Native (Expo)
-- Firebase (Firestore)
-- Google Maps Directions API
-- react-native-maps
-- react-native-gifted-chat
+- **authService**: Handles authentication logic including login, signup, and session management
+
+## Core Concepts
+
+### Matching Algorithm
+
+Matching is based on:
+- Route overlap percentage (>60%)
+- Time window (within 15 minutes)
+- Role complementarity (rider-driver pairs)
+
+Tunable parameters in `src/services/matching.js`:
+- `MATCH_THRESHOLD_KM`: 1.0 km
+- `TIME_WINDOW_MINUTES`: 15
+- `OVERLAP_THRESHOLD`: 0.6 (60%)
+
+### Architecture
+
+- `src/components/`: UI components like MapComponent
+- `src/screens/`: App screens (ChatScreen, HomeScreen, LoginScreen, SignupScreen)
+- `src/services/`: Backend logic (Firebase, Directions, Matching, Auth)
+- `App.js`: Main entry point with navigation
+
+## Available Scripts
+
+- `npm start`: Start development server (`npx expo start`)
+- `npm run android`: Launch on Android emulator
+- `npm run ios`: Launch on iOS simulator
+- `npm run web`: Run on web
+- `npm run test`: Run Jest tests
